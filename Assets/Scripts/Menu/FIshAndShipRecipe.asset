@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e18ae7413af5f147a2fdd9e4469af54, type: 3}
   m_Name: FIshAndShipRecipe
   m_EditorClassIdentifier: 
-  recipeTitle: 
-  ingredients: []
-  description: 
+  recipeTitle: Fish & Chips
+  ingredients:
+  - Fish
+  - Potato
+  description: A delicious fish and chips.
