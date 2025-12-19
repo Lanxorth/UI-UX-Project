@@ -3,69 +3,69 @@ using UnityEngine.UI;
 
 public class HandPreview : MonoBehaviour
 {
-    [Header("Cameras et UI")]
     public Camera leftHandCamera;
     public Camera rightHandCamera;
+
     public RawImage leftHandImage;
     public RawImage rightHandImage;
 
-    [Header("Options")]
-    public Vector3 cameraOffset = new Vector3(0, 0, -2f);
-    public float rotationSpeed = 30f;
+    public GameObject leftHandObject;
+    public GameObject rightHandObject;
 
-    GameObject leftHandObject;
-    GameObject rightHandObject;
+    public float rotationSpeed = 40f;
 
-    // Afficher un objet dans la main choisie
+    void Update()
+    {
+        if (leftHandObject != null)
+            leftHandObject.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+
+        if (rightHandObject != null)
+            rightHandObject.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+    }
+
     public void ShowInHand(GameObject obj, bool leftHand)
     {
         if (obj == null) return;
 
+        // une main = un objet
+        if (leftHand && leftHandObject != null) return;
+        if (!leftHand && rightHandObject != null) return;
+
         Camera cam = leftHand ? leftHandCamera : rightHandCamera;
         RawImage image = leftHand ? leftHandImage : rightHandImage;
 
-        // ÉTAPE CLÉ : parentage à la caméra
+        // parent à la caméra de la main
         obj.transform.SetParent(cam.transform);
 
-        // position LOCALE devant la caméra
+        // position locale devant la caméra
         obj.transform.localPosition = new Vector3(0, 0, 0.5f);
         obj.transform.localRotation = Quaternion.identity;
-        obj.transform.localScale = Vector3.one;
 
-        // layer visible uniquement par la caméra de la main
-        obj.layer = LayerMask.NameToLayer(leftHand ? "HeldObjectLeft" : "HeldObjectRight");
+        // changer de layer
+        obj.layer = LayerMask.NameToLayer(
+            leftHand ? "LeftHand" : "RightHand"
+        );
+
+        // désactiver la physique
+        Rigidbody rb = obj.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.detectCollisions = false;
+        }
 
         if (leftHand) leftHandObject = obj;
         else rightHandObject = obj;
 
-        if (image != null)
-            image.texture = cam.targetTexture;
+        image.texture = cam.targetTexture;
     }
 
-
-    void Update()
+    public void RemoveFromHand(bool leftHand)
     {
-        // rotation pour effet 3D
-        if (leftHandObject != null)
-            leftHandObject.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
-        if (rightHandObject != null)
-            rightHandObject.transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime, Space.World);
-    }
+        if (leftHand && leftHandObject != null)
+            leftHandObject = null;
 
-    // Cacher l'objet de la main
-    public void HideHand(bool leftHand)
-    {
-        GameObject obj = leftHand ? leftHandObject : rightHandObject;
-        RawImage image = leftHand ? leftHandImage : rightHandImage;
-
-        if (obj != null)
-        {
-            obj.layer = LayerMask.NameToLayer("Default");
-            if (leftHand) leftHandObject = null;
-            else rightHandObject = null;
-        }
-
-        if (image != null)
-            image.texture = null;
+        if (!leftHand && rightHandObject != null)
+            rightHandObject = null;
     }
 }

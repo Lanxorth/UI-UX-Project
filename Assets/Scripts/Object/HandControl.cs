@@ -21,20 +21,33 @@ public class HandController : MonoBehaviour
     public void DropObject()
     {
         if (handPreview != null)
-            handPreview.HideHand(leftHandActive);
+            handPreview.RemoveFromHand(leftHandActive);
+
     }
 
-    public void PickSelectedObject(bool leftHand)
+    public void PickSelectedObject()
     {
+        Debug.Log("BOUTON CLIQUÉ");
+
         ObjectSelector selector = FindObjectOfType<ObjectSelector>();
+        if (selector == null)
+        {
+            Debug.LogError("ObjectSelector introuvable");
+            return;
+        }
+
         GameObject obj = selector.GetSelectedObject();
+        if (obj == null)
+        {
+            Debug.LogError("Aucun objet sélectionné");
+            return;
+        }
 
-        if (obj == null) return;
+        Debug.Log("Objet pris : " + obj.name);
 
-        SetActiveHand(leftHand);
         PickUpObject(obj);
-
         selector.ClearSelection();
     }
+
 
 }

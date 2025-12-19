@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 public class ObjectSelector : MonoBehaviour
@@ -21,6 +22,10 @@ public class ObjectSelector : MonoBehaviour
 
     void Update()
     {
+        // si la souris est sur l'UI, on ne sélectionne pas d'objet
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+            return;
+
         if (Mouse.current == null) return;
 
         if (Mouse.current.leftButton.wasPressedThisFrame)
