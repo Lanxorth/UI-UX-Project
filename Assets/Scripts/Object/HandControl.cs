@@ -23,4 +23,18 @@ public class HandController : MonoBehaviour
         if (handPreview != null)
             handPreview.HideHand(leftHandActive);
     }
+
+    public void PickSelectedObject(bool leftHand)
+    {
+        ObjectSelector selector = FindObjectOfType<ObjectSelector>();
+        GameObject obj = selector.GetSelectedObject();
+
+        if (obj == null) return;
+
+        SetActiveHand(leftHand);
+        PickUpObject(obj);
+
+        selector.ClearSelection();
+    }
+
 }

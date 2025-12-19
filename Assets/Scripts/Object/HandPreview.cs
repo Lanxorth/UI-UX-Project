@@ -19,30 +19,29 @@ public class HandPreview : MonoBehaviour
     // Afficher un objet dans la main choisie
     public void ShowInHand(GameObject obj, bool leftHand)
     {
-        if (obj == null)
-        {
-            HideHand(leftHand);
-            return;
-        }
+        if (obj == null) return;
 
         Camera cam = leftHand ? leftHandCamera : rightHandCamera;
         RawImage image = leftHand ? leftHandImage : rightHandImage;
 
-        // Positionner l'objet devant la caméra
-        obj.transform.position = cam.transform.position - cam.transform.forward * cameraOffset.z;
-        obj.transform.rotation = Quaternion.identity;
+        // ÉTAPE CLÉ : parentage à la caméra
+        obj.transform.SetParent(cam.transform);
 
-        // Définir le layer approprié pour que seule la caméra cible voie l’objet
+        // position LOCALE devant la caméra
+        obj.transform.localPosition = new Vector3(0, 0, 0.5f);
+        obj.transform.localRotation = Quaternion.identity;
+        obj.transform.localScale = Vector3.one;
+
+        // layer visible uniquement par la caméra de la main
         obj.layer = LayerMask.NameToLayer(leftHand ? "HeldObjectLeft" : "HeldObjectRight");
 
-        // Stocker l'objet
         if (leftHand) leftHandObject = obj;
         else rightHandObject = obj;
 
-        // Activer la RenderTexture dans l'UI
         if (image != null)
             image.texture = cam.targetTexture;
     }
+
 
     void Update()
     {
