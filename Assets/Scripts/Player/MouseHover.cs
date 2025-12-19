@@ -5,6 +5,7 @@ public class MouseHover : MonoBehaviour
 {
     public LayerMask interactableLayer;
     public Material highlightMaterial;
+    public Book book; // Référence au script Book
 
     Camera cam;
     Renderer currentRenderer;
@@ -19,6 +20,13 @@ public class MouseHover : MonoBehaviour
 
     void Update()
     {
+        // Bloque le raycast si un popup est ouvert
+        if (book != null && book.isPopupOpen)
+        {
+            ClearHighlight();
+            return;
+        }
+
         if (cam == null || Mouse.current == null)
             return;
 

@@ -50,6 +50,13 @@ public class ObjectSelector : MonoBehaviour
     {
         selectedObject = obj;
 
+        // Récupérer le HandController
+        HandController hands = FindObjectOfType<HandController>();
+        if (hands != null)
+        {
+            hands.PickUpObject(obj); // par exemple main gauche
+        }
+
         if (worldMenu != null)
         {
             worldMenu.transform.position = hitPoint + menuOffset;
@@ -58,6 +65,7 @@ public class ObjectSelector : MonoBehaviour
 
         Debug.Log("Objet sélectionné : " + obj.name);
     }
+
 
     void Deselect()
     {

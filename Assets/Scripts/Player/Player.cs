@@ -6,26 +6,27 @@ public class PlayerSimple : MonoBehaviour
     public float moveSpeed = 5f;
     public float rotationSpeed = 120f;
     public Transform cameraTransform;
-
     Rigidbody rb;
 
-    // R�f�rence au script Book pour savoir si un popup est ouvert
-    public Book book;
+    public Book book; // Référence au script Book pour savoir si un popup est ouvert
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
 
-        // Souris TOUJOURS libre
+        // Souris toujours libre
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
     void FixedUpdate()
     {
-        // Bloque les mouvements si un popup est ouvert
+        // Bloque tous les mouvements et la rotation si un popup est ouvert
         if (book != null && book.isPopupOpen)
+        {
+            rb.linearVelocity = Vector3.zero;
             return;
+        }
 
         Move();
         Rotate();
@@ -37,7 +38,6 @@ public class PlayerSimple : MonoBehaviour
 
         if (Keyboard.current.zKey.isPressed || Keyboard.current.wKey.isPressed)
             forward = 1f;
-
         if (Keyboard.current.sKey.isPressed)
             forward = -1f;
 
@@ -51,7 +51,6 @@ public class PlayerSimple : MonoBehaviour
 
         if (Keyboard.current.qKey.isPressed || Keyboard.current.aKey.isPressed)
             turn = -1f;
-
         if (Keyboard.current.dKey.isPressed)
             turn = 1f;
 
