@@ -1,73 +1,53 @@
 using UnityEngine;
-using static UnityEngine.InputSystem.InputAction;
+using UnityEngine.InputSystem;
 
-public class Player : MonoBehaviour
+public class PlayerSimple : MonoBehaviour
 {
-    [SerializeField] private float speed = 5f;
-    [SerializeField] private float rotationSpeed = 5f;
-    [SerializeField] private Rigidbody rigidBody = null;
-    [SerializeField] private Vector2 minMaxYaw = new(-90f, 90f);
+    public float moveSpeed = 5f;
+    public float rotationSpeed = 120f;
+    public Transform cameraTransform;
 
-    [SerializeField] private int rayDistance = 5;
-    [SerializeField] private LayerMask interactionMask = default;
-    [SerializeField] private Transform root = null;
-    [SerializeField] private Transform head = null;
+    Rigidbody rb;
 
-    private Vector3 input = Vector3.zero;
-    private Vector2 rotationInput;
-    private Vector2 currentRotation;
-
-    private void Reset()
+    void Start()
     {
-        rigidBody = GetComponent<Rigidbody>();
+        rb = GetComponent<Rigidbody>();
+
+        // Souris TOUJOURS libre
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
-    private void Awake()
+    void FixedUpdate()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        Move();
+        Rotate();
     }
 
-    public void Player_OnInteract(CallbackContext context)
+    void Move()
     {
-        if (!context.performed)
-            return;
+        float forward = 0f;
 
+        if (Keyboard.current.zKey.isPressed || Keyboard.current.wKey.isPressed)
+            forward = 1f;
 
-        Ray ray = new Ray(head.position, head.forward);
-        RaycastHit hit;
+        if (Keyboard.current.sKey.isPressed)
+            forward = -1f;
 
-        if (Physics.Raycast(ray, out hit, rayDistance, interactionMask))
-        {
-            
-        }
+        Vector3 move = transform.forward * forward * moveSpeed;
+        rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
     }
 
-
-    public void Player_OnMove(CallbackContext context)
+    void Rotate()
     {
-        input = context.ReadValue<Vector2>();
-        input.z = input.y;
-        input.y = 0;
-    }
+        float turn = 0f;
 
+        if (Keyboard.current.qKey.isPressed || Keyboard.current.aKey.isPressed)
+            turn = -1f;
 
-    public void Player_OnLook(CallbackContext context)
-    {
-        rotationInput = context.ReadValue<Vector2>();
-    }
+        if (Keyboard.current.dKey.isPressed)
+            turn = 1f;
 
-    private void LateUpdate()
-    {
-        currentRotation.x += -rotationInput.y * rotationSpeed * Time.deltaTime;
-        currentRotation.y += rotationInput.x * rotationSpeed * Time.deltaTime;
-        currentRotation.x = Mathf.Clamp(currentRotation.x, minMaxYaw.x, minMaxYaw.y);
-
-        root.localRotation = Quaternion.Euler(0, currentRotation.y, 0);
-        head.localRotation = Quaternion.Euler(currentRotation.x, 0, 0);
-    }
-
-    private void FixedUpdate()
-    {
-        rigidBody.linearVelocity = root.rotation * (speed * input.normalized);
+        transform.Rotate(Vector3.up * turn * rotationSpeed * Time.fixedDeltaTime);
     }
 }
