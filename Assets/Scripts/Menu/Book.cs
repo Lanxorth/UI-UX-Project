@@ -5,148 +5,222 @@ using System.Collections.Generic;
 
 public class Book : MonoBehaviour
 {
-    [Header("UI")]
-    public Canvas worldCanvas;
-    public TMP_Text leftPageTitle;
-    public TMP_Text leftPageIngredients;
-    public TMP_Text leftPageDescription;
+    [Header("UI Pages")]
+    public TMP_Text leftTitle;
+    public TMP_Text leftIngredients;
+    public TMP_Text leftDescription;
 
-    public TMP_Text rightPageTitle;
-    public TMP_Text rightPageIngredients;
-    public TMP_Text rightPageDescription;
+    public TMP_Text rightTitle;
+    public TMP_Text rightIngredients;
+    public TMP_Text rightDescription;
 
-    public Button nextPageButton;
-    public Button prevPageButton;
+    [Header("Page Buttons")]
+    public Button leftPageButton;
+    public Button rightPageButton;
 
-    [Header("Modals")]
-    public CanvasGroup viewRecipePopup;  // pour lire la recette
+    [Header("Navigation Buttons")]
+    public Button nextButton;
+    public Button prevButton;
+    public Button addButton; // bouton général pour ajouter une recette
+
+    [Header("View Popup")]
+    public CanvasGroup viewPopup;
     public TMP_Text popupTitle;
     public TMP_Text popupIngredients;
     public TMP_Text popupDescription;
-    public Button closePopupButton;
+    public Button closeViewButton;
 
-    public CanvasGroup addRecipePopup;   // pour ajouter une recette
+    [Header("Add Popup")]
+    public CanvasGroup addPopup;
     public TMP_InputField inputTitle;
     public TMP_InputField inputDescription;
-    public Dropdown inputIngredients;
-    public Button saveRecipeButton;
-    public Button cancelAddRecipeButton;
+    public TMP_Dropdown ingredientDropdown1;
+    public TMP_Dropdown ingredientDropdown2;
+    public TMP_Dropdown ingredientDropdown3;
+    public TMP_Dropdown ingredientDropdown4;
+    public Button saveButton;
+    public Button cancelButton;
 
     [Header("Recipes")]
     public List<Recipe> recipes = new List<Recipe>();
 
-    private int currentPageIndex = 0; // page gauche = index, page droite = index+1
+    private int pageIndex = 0;
+
+    [HideInInspector] public bool isPopupOpen = false;
 
     void Start()
     {
-        nextPageButton.onClick.AddListener(NextPage);
-        prevPageButton.onClick.AddListener(PrevPage);
+        nextButton.onClick.AddListener(NextPage);
+        prevButton.onClick.AddListener(PrevPage);
+        addButton.onClick.AddListener(OpenAddPopup);
 
-        closePopupButton.onClick.AddListener(CloseViewPopup);
-        cancelAddRecipeButton.onClick.AddListener(CloseAddPopup);
-        saveRecipeButton.onClick.AddListener(SaveNewRecipe);
+        closeViewButton.onClick.AddListener(CloseViewPopup);
+        cancelButton.onClick.AddListener(CloseAddPopup);
+        saveButton.onClick.AddListener(SaveNewRecipe);
+
+        // Désactive les popups au départ
+        if (addPopup != null) addPopup.gameObject.SetActive(false);
+        if (viewPopup != null) viewPopup.gameObject.SetActive(false);
 
         UpdatePages();
     }
 
-    #region Pagination
+    #region Pages
     void UpdatePages()
     {
-        // gauche
-        if (currentPageIndex < recipes.Count)
+        // Page gauche
+        Recipe leftRecipe = pageIndex < recipes.Count ? recipes[pageIndex] : null;
+        DisplayRecipeOnPage(leftRecipe, leftTitle, leftIngredients, leftDescription);
+        SetupPageButton(leftPageButton, leftRecipe);
+
+        // Page droite
+        Recipe rightRecipe = pageIndex + 1 < recipes.Count ? recipes[pageIndex + 1] : null;
+        DisplayRecipeOnPage(rightRecipe, rightTitle, rightIngredients, rightDescription);
+        SetupPageButton(rightPageButton, rightRecipe);
+
+        // Mise à jour boutons de navigation
+        prevButton.interactable = pageIndex > 0;
+        nextButton.interactable = pageIndex + 2 < recipes.Count;
+    }
+
+    void DisplayRecipeOnPage(Recipe r, TMP_Text title, TMP_Text ing, TMP_Text desc)
+    {
+        if (title == null || ing == null || desc == null) return;
+
+        if (r == null)
         {
-            leftPageTitle.text = recipes[currentPageIndex].recipeTitle;
-            leftPageIngredients.text = string.Join("\n", recipes[currentPageIndex].ingredients);
-            leftPageDescription.text = recipes[currentPageIndex].description;
-        }
-        else
-        {
-            leftPageTitle.text = "";
-            leftPageIngredients.text = "";
-            leftPageDescription.text = "";
+            ClearPage(title, ing, desc);
+            return;
         }
 
-        // droite
-        if (currentPageIndex + 1 < recipes.Count)
+        title.text = r.recipeTitle ?? "";
+        ing.text = r.ingredients != null ? string.Join("\n", r.ingredients) : "";
+        desc.text = r.description ?? "";
+    }
+
+    void ClearPage(TMP_Text title, TMP_Text ing, TMP_Text desc)
+    {
+        if (title != null) title.text = "[Add Recipe]";
+        if (ing != null) ing.text = "";
+        if (desc != null) desc.text = "";
+    }
+
+    void SetupPageButton(Button button, Recipe r)
+    {
+        if (button == null) return;
+
+        button.onClick.RemoveAllListeners();
+
+        if (r == null)
         {
-            rightPageTitle.text = recipes[currentPageIndex + 1].recipeTitle;
-            rightPageIngredients.text = string.Join("\n", recipes[currentPageIndex + 1].ingredients);
-            rightPageDescription.text = recipes[currentPageIndex + 1].description;
+            button.onClick.AddListener(OpenAddPopup);
         }
         else
         {
-            rightPageTitle.text = "";
-            rightPageIngredients.text = "";
-            rightPageDescription.text = "";
+            button.onClick.AddListener(() => ShowViewPopup(r));
         }
     }
 
     void NextPage()
     {
-        if (currentPageIndex + 2 < recipes.Count)
-        {
-            currentPageIndex += 2;
-            UpdatePages();
-        }
+        pageIndex += 2;
+        if (pageIndex >= recipes.Count)
+            pageIndex = Mathf.Max(0, recipes.Count - 2);
+
+        UpdatePages();
     }
 
     void PrevPage()
     {
-        if (currentPageIndex - 2 >= 0)
-        {
-            currentPageIndex -= 2;
-            UpdatePages();
-        }
+        pageIndex -= 2;
+        if (pageIndex < 0) pageIndex = 0;
+
+        UpdatePages();
     }
     #endregion
 
     #region View Popup
-    public void ShowRecipePopup(Recipe recipe)
+    void ShowViewPopup(Recipe r)
     {
-        if (recipe == null) return;
+        if (r == null || viewPopup == null) return;
 
-        popupTitle.text = recipe.recipeTitle;
-        popupIngredients.text = string.Join("\n", recipe.ingredients);
-        popupDescription.text = recipe.description;
+        viewPopup.gameObject.SetActive(true); // Activer le GameObject
 
-        viewRecipePopup.alpha = 1;
-        viewRecipePopup.interactable = true;
-        viewRecipePopup.blocksRaycasts = true;
+        popupTitle.text = r.recipeTitle;
+        popupIngredients.text = r.ingredients != null ? string.Join("\n", r.ingredients) : "";
+        popupDescription.text = r.description;
+
+        viewPopup.alpha = 1;
+        viewPopup.interactable = true;
+        viewPopup.blocksRaycasts = true;
+
+        isPopupOpen = true;
     }
 
     void CloseViewPopup()
     {
-        viewRecipePopup.alpha = 0;
-        viewRecipePopup.interactable = false;
-        viewRecipePopup.blocksRaycasts = false;
+        if (viewPopup == null) return;
+
+        viewPopup.alpha = 0;
+        viewPopup.interactable = false;
+        viewPopup.blocksRaycasts = false;
+
+        viewPopup.gameObject.SetActive(false); // Désactiver le GameObject
+
+        isPopupOpen = false;
     }
     #endregion
 
     #region Add Popup
-    public void OpenAddPopup()
+    void OpenAddPopup()
     {
+        if (addPopup == null) return;
+
+        addPopup.gameObject.SetActive(true); // Activer le GameObject
+
         inputTitle.text = "";
         inputDescription.text = "";
-        inputIngredients.value = 0;
 
-        addRecipePopup.alpha = 1;
-        addRecipePopup.interactable = true;
-        addRecipePopup.blocksRaycasts = true;
+        if (ingredientDropdown1 != null) ingredientDropdown1.value = 0;
+        if (ingredientDropdown2 != null) ingredientDropdown2.value = 0;
+        if (ingredientDropdown3 != null) ingredientDropdown3.value = 0;
+        if (ingredientDropdown4 != null) ingredientDropdown4.value = 0;
+
+        addPopup.alpha = 1;
+        addPopup.interactable = true;
+        addPopup.blocksRaycasts = true;
+
+        isPopupOpen = true;
     }
 
     void CloseAddPopup()
     {
-        addRecipePopup.alpha = 0;
-        addRecipePopup.interactable = false;
-        addRecipePopup.blocksRaycasts = false;
+        if (addPopup == null) return;
+
+        addPopup.alpha = 0;
+        addPopup.interactable = false;
+        addPopup.blocksRaycasts = false;
+
+        addPopup.gameObject.SetActive(false); // Désactiver le GameObject
+
+        isPopupOpen = false;
     }
 
     void SaveNewRecipe()
     {
+        if (addPopup == null) return;
+
         Recipe newRecipe = ScriptableObject.CreateInstance<Recipe>();
         newRecipe.recipeTitle = inputTitle.text;
         newRecipe.description = inputDescription.text;
-        newRecipe.ingredients = new string[] { inputIngredients.options[inputIngredients.value].text };
+
+        List<string> selectedIngredients = new List<string>();
+        if (ingredientDropdown1 != null) selectedIngredients.Add(ingredientDropdown1.options[ingredientDropdown1.value].text);
+        if (ingredientDropdown2 != null) selectedIngredients.Add(ingredientDropdown2.options[ingredientDropdown2.value].text);
+        if (ingredientDropdown3 != null) selectedIngredients.Add(ingredientDropdown3.options[ingredientDropdown3.value].text);
+        if (ingredientDropdown4 != null) selectedIngredients.Add(ingredientDropdown4.options[ingredientDropdown4.value].text);
+
+        newRecipe.ingredients = selectedIngredients.ToArray();
 
         recipes.Add(newRecipe);
         UpdatePages();

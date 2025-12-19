@@ -9,6 +9,9 @@ public class PlayerSimple : MonoBehaviour
 
     Rigidbody rb;
 
+    // R�f�rence au script Book pour savoir si un popup est ouvert
+    public Book book;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -20,6 +23,10 @@ public class PlayerSimple : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Bloque les mouvements si un popup est ouvert
+        if (book != null && book.isPopupOpen)
+            return;
+
         Move();
         Rotate();
     }
